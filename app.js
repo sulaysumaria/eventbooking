@@ -2,10 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const graphqlHttp = require('express-graphql');
 const {buildSchema} = require('graphql');
+const mongoose = require('mongoose');
+
+const Event = require('./models/event');
 
 const app = express();
-
-const events = [];
 
 app.use(bodyParser.json());
 
@@ -44,25 +45,48 @@ app.use(
       `),
       rootValue: {
         events: () => {
-          return events;
+          return Event.find()
+              .then((events) => {
+                return events.map((event) => {
+                  return {...event._doc};
+                });
+              })
+              .catch((e) => {
+                console.log(e);
+                throw e;
+              });
         },
         createEvent: (args) => {
           const {title, description, price, date} = args.eventInput;
 
-          const event = {
-            _id: Math.random().toString(),
+          const event = new Event({
             title,
             description,
             price,
-            date,
-          };
+            date: new Date(date),
+          });
 
-          events.push(event);
-
-          return event;
+          return event
+              .save()
+              .then((result) => {
+                return {...result._doc};
+              })
+              .catch((e) => {
+                console.log(e);
+                throw e;
+              });
         },
       },
     })
 );
 
-app.listen(3000);
+mongoose
+    .connect('mongodb://localhost:27017/eventbooking', {
+      useNewUrlParser: true,
+    })
+    .then(() => {
+      app.listen(3000);
+    })
+    .catch((e) => {
+      console.log(e);
+    });

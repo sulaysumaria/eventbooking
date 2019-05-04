@@ -2,8 +2,12 @@ const Booking = require('./../../models/booking');
 const {transformBooking, transformEvent} = require('./merge');
 
 module.exports = {
-  bookings: async () => {
+  bookings: async (args, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Access Denied');
+      }
+
       const bookings = await Booking.find();
 
       return bookings.map(transformBooking);
@@ -12,10 +16,14 @@ module.exports = {
       throw e;
     }
   },
-  bookEvent: async (args) => {
+  bookEvent: async (args, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Access Denied');
+      }
+
       const booking = new Booking({
-        user: '5cc9b9180cab320ee6bf3ea7',
+        user: req.userId,
         event: args.eventId,
       });
 
@@ -27,8 +35,12 @@ module.exports = {
       throw e;
     }
   },
-  cancelBooking: async (args) => {
+  cancelBooking: async (args, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Access Denied');
+      }
+
       const booking = await Booking.findById(args.bookingId).populate([
         {path: 'event'},
       ]);

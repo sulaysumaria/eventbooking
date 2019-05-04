@@ -1,4 +1,5 @@
 const Event = require('./../../models/event');
+const User = require('./../../models/user');
 const {transformEvent} = require('./merge');
 
 module.exports = {
@@ -12,8 +13,12 @@ module.exports = {
       throw e;
     }
   },
-  createEvent: async (args) => {
+  createEvent: async (args, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Access Denied');
+      }
+
       const {title, description, price, date} = args.eventInput;
 
       const event = new Event({
@@ -21,13 +26,13 @@ module.exports = {
         description,
         price,
         date: new Date(date),
-        creator: '5cc9b9180cab320ee6bf3ea7',
+        creator: req.userId,
       });
 
       const result = await event.save();
 
       const userResult = await User.findById({
-        _id: '5cc9b9180cab320ee6bf3ea7',
+        _id: req.userId,
       });
 
       if (!userResult) {
